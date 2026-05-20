@@ -27,10 +27,7 @@ const processQueue = (error: any, token: string | null = null) => {
   failedQueue = [];
 };
 
-let accessToken: string | null = localStorage.getItem('accessToken');
-
 export const setAccessToken = (token: string | null) => {
-  accessToken = token;
   if (token) {
     localStorage.setItem('accessToken', token);
   } else {
@@ -38,12 +35,13 @@ export const setAccessToken = (token: string | null) => {
   }
 };
 
-export const getAccessToken = () => accessToken;
+export const getAccessToken = () => localStorage.getItem('accessToken');
 
 axiosInstance.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    if (accessToken && config.headers) {
-      config.headers.Authorization = `Bearer ${accessToken}`;
+    const token = getAccessToken();
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
@@ -77,10 +75,7 @@ axiosInstance.interceptors.response.use(
 
       try {
         const response = await axiosInstance.post('/auth/refresh');
-        const data = response.data;
-        
-        // Robust token extraction matching login logic
-        const access_token = data.access_token || data.token || data.accessToken;
+        const { access_token } = response.data;
 
         if (!access_token) {
           throw new Error('No access token returned from refresh');
@@ -97,6 +92,8 @@ axiosInstance.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null);
         setAccessToken(null);
+        localStorage.removeItem('hasSession');
+        window.location.href = '/login';
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

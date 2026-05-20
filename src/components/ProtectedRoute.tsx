@@ -5,13 +5,15 @@ import { useAuth, Role } from '../context/AuthContext';
 interface ProtectedRouteProps {
   children: React.ReactNode;
   allowedRoles?: Role[];
+  requireOnboardingCompleted?: boolean;
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
   children, 
-  allowedRoles 
+  allowedRoles,
+  requireOnboardingCompleted = false
 }) => {
-  const { isAuthenticated, user, isLoading } = useAuth();
+  const { isAuthenticated, user, isLoading, onboardingStep } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
@@ -24,6 +26,15 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (requireOnboardingCompleted && onboardingStep !== 'COMPLETED') {
+    if (onboardingStep === 'PENDING_EMAIL') {
+      return <Navigate to="/onboarding/email" replace />;
+    }
+    if (onboardingStep === 'PENDING_PROFILE') {
+      return <Navigate to="/onboarding/profile" replace />;
+    }
   }
 
   if (allowedRoles && user && !allowedRoles.includes(user.role)) {

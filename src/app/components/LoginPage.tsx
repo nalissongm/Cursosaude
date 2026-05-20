@@ -1,19 +1,29 @@
 import { useState } from 'react';
 import { MessageCircle, Eye, EyeOff } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import { useAuth } from '../../context/AuthContext';
 
-interface LoginPageProps {
-  onLogin: () => void;
-}
-
-export function LoginPage({ onLogin }: LoginPageProps) {
+export function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [cpfEmail, setCpfEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { login } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onLogin();
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      await login({ identifier: cpfEmail, password });
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Falha no login. Verifique suas credenciais.');
+      console.error('Login error:', err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -60,6 +70,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
                 onChange={(e) => setCpfEmail(e.target.value)}
                 placeholder="Digite seu CPF ou e-mail"
                 className="w-full px-4 py-3 bg-[#f8fafc] border border-[#e2e8f0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1e40af] focus:border-transparent transition-all"
+                required
               />
             </div>
 
@@ -75,6 +86,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Digite sua senha"
                   className="w-full px-4 py-3 bg-[#f8fafc] border border-[#e2e8f0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1e40af] focus:border-transparent transition-all pr-12"
+                  required
                 />
                 <button
                   type="button"
@@ -85,6 +97,8 @@ export function LoginPage({ onLogin }: LoginPageProps) {
                 </button>
               </div>
             </div>
+
+            {error && <p className="text-sm text-red-600">{error}</p>}
 
             <div className="flex items-center justify-between">
               <label className="flex items-center">
@@ -98,9 +112,10 @@ export function LoginPage({ onLogin }: LoginPageProps) {
 
             <button
               type="submit"
-              className="w-full py-3 bg-[#1e40af] text-white rounded-lg hover:bg-[#1e3a8a] transition-all duration-200 shadow-lg shadow-[#1e40af]/20 hover:shadow-xl hover:shadow-[#1e40af]/30"
+              className="w-full py-3 bg-[#1e40af] text-white rounded-lg hover:bg-[#1e3a8a] transition-all duration-200 shadow-lg shadow-[#1e40af]/20 hover:shadow-xl hover:shadow-[#1e40af]/30 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isLoading}
             >
-              Entrar
+              {isLoading ? 'Entrando...' : 'Entrar'}
             </button>
           </form>
 
