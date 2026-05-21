@@ -1,84 +1,98 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { useNavigate, useLocation } from 'react-router';
-import axiosInstance from '../../lib/axios';
+import { Loader2, ShieldCheck } from 'lucide-react';
+import api from '../../lib/axios';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from './ui/card';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from './ui/input-otp';
 
-export const VerifyEmailPage: React.FC = () => {
-  const [code, setCode] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+const schema = z.object({
+  code: z.string().length(6, 'O código deve ter 6 dígitos'),
+});
+
+type FormValues = z.infer<typeof schema>;
+
+export function VerifyEmailPage() {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { updateOnboardingStep } = useAuth();
-  const email = location.state?.email;
+  const email = location.state?.email || 'seu e-mail';
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (code.length !== 6) return;
-    
-    setIsLoading(true);
+  const form = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      code: '',
+    },
+  });
+
+  const onSubmit = async (values: FormValues) => {
     setError(null);
-
     try {
-      await axiosInstance.post('/users/onboarding/verify', { code });
+      await api.post('/users/onboarding/verify', values);
       updateOnboardingStep('PENDING_PROFILE');
       navigate('/onboarding/profile');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Código inválido ou expirado.');
-      console.error('Error verifying email:', err);
-    } finally {
-      setIsLoading(false);
+      setError(err.response?.data?.message || 'Código inválido ou expirado. Verifique e tente novamente.');
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#f8fafc] p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl text-[#1e40af]">Verificar E-mail</CardTitle>
-          <CardDescription>
-            Enviamos um código de 6 dígitos para {email || 'seu e-mail'}. Digite-o abaixo.
+      <Card className="w-full max-w-md shadow-xl border-none">
+        <CardHeader className="text-center space-y-2">
+          <div className="mx-auto w-16 h-16 bg-[#1e40af]/10 rounded-full flex items-center justify-center mb-4">
+            <ShieldCheck className="text-[#1e40af] w-8 h-8" />
+          </div>
+          <CardTitle className="text-2xl font-bold text-gray-900">Confirme seu E-mail</CardTitle>
+          <CardDescription className="text-base">
+            Digite o código de 6 dígitos que enviamos para <span className="font-semibold text-gray-900">{email}</span>.
           </CardDescription>
         </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-6 flex flex-col items-center">
-            <div className="space-y-2 w-full">
-              <Label htmlFor="code" className="text-center block">Código de Verificação</Label>
-              <div className="flex justify-center">
-                <InputOTP
-                  maxLength={6}
-                  value={code}
-                  onChange={(value) => setCode(value)}
-                >
-                  <InputOTPGroup>
-                    <InputOTPSlot index={0} />
-                    <InputOTPSlot index={1} />
-                    <InputOTPSlot index={2} />
-                    <InputOTPSlot index={3} />
-                    <InputOTPSlot index={4} />
-                    <InputOTPSlot index={5} />
-                  </InputOTPGroup>
-                </InputOTP>
-              </div>
-            </div>
-            {error && <p className="text-sm text-red-600 w-full text-center">{error}</p>}
-          </CardContent>
-          <CardFooter>
-            <Button 
-              type="submit" 
-              className="w-full bg-[#1e40af] hover:bg-[#1e3a8a]" 
-              disabled={isLoading || code.length !== 6}
-            >
-              {isLoading ? 'Verificando...' : 'Verificar'}
-            </Button>
-          </CardFooter>
-        </form>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <CardContent className="space-y-6 flex flex-col items-center">
+              <FormField
+                control={form.control}
+                name="code"
+                render={({ field }) => (
+                  <FormItem className="text-center">
+                    <FormLabel>Código de Verificação</FormLabel>
+                    <FormControl>
+                      <InputOTP maxLength={6} {...field}>
+                        <InputOTPGroup className="gap-2">
+                          <InputOTPSlot index={0} className="w-12 h-14 text-xl border-gray-300" />
+                          <InputOTPSlot index={1} className="w-12 h-14 text-xl border-gray-300" />
+                          <InputOTPSlot index={2} className="w-12 h-14 text-xl border-gray-300" />
+                          <InputOTPSlot index={3} className="w-12 h-14 text-xl border-gray-300" />
+                          <InputOTPSlot index={4} className="w-12 h-14 text-xl border-gray-300" />
+                          <InputOTPSlot index={5} className="w-12 h-14 text-xl border-gray-300" />
+                        </InputOTPGroup>
+                      </InputOTP>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {error && <p className="text-sm text-red-600 font-medium text-center">{error}</p>}
+            </CardContent>
+            <CardFooter>
+              <Button
+                type="submit"
+                className="w-full bg-[#1e40af] hover:bg-[#1e3a8a] py-6 text-lg"
+                disabled={form.formState.isSubmitting}
+              >
+                {form.formState.isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : 'Verificar e Continuar'}
+              </Button>
+            </CardFooter>
+          </form>
+        </Form>
       </Card>
     </div>
   );
-};
+}

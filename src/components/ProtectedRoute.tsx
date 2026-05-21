@@ -1,19 +1,17 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router';
-import { useAuth, Role } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  allowedRoles?: Role[];
-  requireOnboardingCompleted?: boolean;
+  requireOnboarding?: boolean;
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
   children, 
-  allowedRoles,
-  requireOnboardingCompleted = false
+  requireOnboarding = false 
 }) => {
-  const { isAuthenticated, user, isLoading, onboardingStep } = useAuth();
+  const { isAuthenticated, onboardingStep, isLoading } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
@@ -28,17 +26,25 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (requireOnboardingCompleted && onboardingStep !== 'COMPLETED') {
-    if (onboardingStep === 'PENDING_EMAIL') {
-      return <Navigate to="/onboarding/email" replace />;
-    }
-    if (onboardingStep === 'PENDING_PROFILE') {
-      return <Navigate to="/onboarding/profile" replace />;
-    }
+  // Handle standard restriction
+  if (requireOnboarding && onboardingStep !== 'COMPLETED') {
+    if (onboardingStep === 'PENDING_EMAIL') return <Navigate to="/onboarding/email" replace />;
+    if (onboardingStep === 'PENDING_PROFILE') return <Navigate to="/onboarding/profile" replace />;
   }
 
-  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/unauthorized" replace />;
+  // Strictly enforce onboarding sequence to prevent step-bypassing via URL
+  if (!requireOnboarding && location.pathname.startsWith('/onboarding')) {
+    if (onboardingStep === 'COMPLETED') return <Navigate to="/dashboard" replace />;
+    
+    // Allow both /email and /verify during PENDING_EMAIL to prevent routing loops after submission
+    if (onboardingStep === 'PENDING_EMAIL' && !['/onboarding/email', '/onboarding/verify'].includes(location.pathname)) {
+      return <Navigate to="/onboarding/email" replace />;
+    }
+    
+    // Lock the user to profile completion step
+    if (onboardingStep === 'PENDING_PROFILE' && location.pathname !== '/onboarding/profile') {
+      return <Navigate to="/onboarding/profile" replace />;
+    }
   }
 
   return <>{children}</>;

@@ -3,42 +3,41 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useNavigate } from 'react-router';
-import { Loader2, Eye, EyeOff, MessageCircle } from 'lucide-react';
+import { Loader2, Eye, EyeOff, ChevronLeft } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from './ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 
-const loginSchema = z.object({
-  identifier: z.string().min(1, 'E-mail ou Matrícula é obrigatório'),
-  password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres'),
+const schema = z.object({
+  identifier: z.string().min(1, 'Matrícula é obrigatória'),
+  password: z.string().min(1, 'Senha temporária é obrigatória'),
 });
 
-type LoginFormValues = z.infer<typeof loginSchema>;
+type FormValues = z.infer<typeof schema>;
 
-export function LoginPage() {
+export function FirstAccessPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const form = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
+  const form = useForm<FormValues>({
+    resolver: zodResolver(schema),
     defaultValues: {
       identifier: '',
       password: '',
     },
   });
 
-  const onSubmit = async (values: LoginFormValues) => {
+  const onSubmit = async (values: FormValues) => {
     setError(null);
     try {
       await login(values);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Erro ao realizar login. Verifique suas credenciais.');
+      setError(err.response?.data?.message || 'Dados incorretos. Verifique sua matrícula e senha temporária.');
     }
   };
 
@@ -52,23 +51,24 @@ export function LoginPage() {
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-white p-12">
-          <h1 className="text-5xl mb-4 text-center">Acesse sua plataforma de ensino</h1>
-          <p className="text-xl text-center max-w-md opacity-90">Prepare-se com os melhores conteúdos e conquiste seus objetivos.</p>
+          <h1 className="text-5xl mb-4 text-center">Ativação de Conta</h1>
+          <p className="text-xl text-center max-w-md opacity-90">Bem-vindo ao Cursosaude. Siga os passos para configurar seu perfil.</p>
         </div>
       </div>
 
       <div className="w-full lg:w-1/2 flex items-center justify-center bg-white p-8">
         <div className="w-full max-w-md space-y-8">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-[#1e40af] rounded-lg flex items-center justify-center">
-              <span className="text-white text-xl font-bold">+</span>
-            </div>
-            <span className="text-2xl font-bold text-[#1e40af]">Cursosaude</span>
-          </div>
+          <button
+            onClick={() => navigate('/login')}
+            className="flex items-center text-gray-500 hover:text-gray-900 transition-colors"
+          >
+            <ChevronLeft size={20} />
+            Voltar ao login
+          </button>
 
           <div>
-            <h2 className="text-3xl font-bold text-gray-900">Bem-vindo de volta</h2>
-            <p className="text-gray-500 mt-2">Entre com suas credenciais para continuar</p>
+            <h2 className="text-3xl font-bold text-gray-900">Primeiro Acesso</h2>
+            <p className="text-gray-500 mt-2">Ative sua conta de estudante.</p>
           </div>
 
           <Form {...form}>
@@ -78,9 +78,9 @@ export function LoginPage() {
                 name="identifier"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>E-mail ou Matrícula</FormLabel>
+                    <FormLabel>Matrícula</FormLabel>
                     <FormControl>
-                      <Input placeholder="Digite seu e-mail ou matrícula" {...field} />
+                      <Input placeholder="Digite sua matrícula" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -92,12 +92,12 @@ export function LoginPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Senha</FormLabel>
+                    <FormLabel>Senha Temporária</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Input
                           type={showPassword ? 'text' : 'password'}
-                          placeholder="Digite sua senha"
+                          placeholder="Digite sua senha temporária"
                           {...field}
                         />
                         <button
@@ -121,27 +121,10 @@ export function LoginPage() {
                 className="w-full bg-[#1e40af] hover:bg-[#1e3a8a] py-6 text-lg"
                 disabled={form.formState.isSubmitting}
               >
-                {form.formState.isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : 'Entrar'}
+                {form.formState.isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : 'Prosseguir'}
               </Button>
             </form>
           </Form>
-
-          <div className="text-center space-y-4 pt-4">
-            <button
-              onClick={() => navigate('/primeiro-acesso')}
-              className="text-[#1e40af] hover:underline font-medium"
-            >
-              É seu primeiro acesso? Clique aqui
-            </button>
-            
-            <div className="pt-8 border-t border-gray-100">
-              <p className="text-sm text-gray-500 mb-4">Problemas para acessar?</p>
-              <Button variant="outline" className="w-full flex items-center gap-2 border-[#10b981] text-[#10b981] hover:bg-[#10b981]/5">
-                <MessageCircle size={20} />
-                Suporte via WhatsApp
-              </Button>
-            </div>
-          </div>
         </div>
       </div>
     </div>

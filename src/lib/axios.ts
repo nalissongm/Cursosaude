@@ -5,10 +5,8 @@ interface FailedRequest {
   reject: (reason?: any) => void;
 }
 
-const env = (import.meta as any).env as { VITE_API_URL?: string };
-
-const axiosInstance = axios.create({
-  baseURL: env.VITE_API_URL || 'http://localhost:3000',
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
   withCredentials: true,
 });
 
@@ -23,23 +21,12 @@ const processQueue = (error: any, token: string | null = null) => {
       prom.resolve(token!);
     }
   });
-
   failedQueue = [];
 };
 
-export const setAccessToken = (token: string | null) => {
-  if (token) {
-    localStorage.setItem('accessToken', token);
-  } else {
-    localStorage.removeItem('accessToken');
-  }
-};
-
-export const getAccessToken = () => localStorage.getItem('accessToken');
-
-axiosInstance.interceptors.request.use(
+api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = getAccessToken();
+    const token = localStorage.getItem('access_token');
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -48,15 +35,12 @@ axiosInstance.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-axiosInstance.interceptors.response.use(
+api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-    // Prevent loop if the refresh request itself fails
-    const isRefreshRequest = originalRequest.url?.includes('/auth/refresh');
-
-    if (error.response?.status === 401 && !originalRequest._retry && !isRefreshRequest) {
+    if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes('/auth/refresh')) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -65,7 +49,7 @@ axiosInstance.interceptors.response.use(
             if (originalRequest.headers) {
               originalRequest.headers.Authorization = `Bearer ${token}`;
             }
-            return axiosInstance(originalRequest);
+            return api(originalRequest);
           })
           .catch((err) => Promise.reject(err));
       }
@@ -73,26 +57,35 @@ axiosInstance.interceptors.response.use(
       originalRequest._retry = true;
       isRefreshing = true;
 
-      try {
-        const response = await axiosInstance.post('/auth/refresh');
-        const { access_token } = response.data;
+      const refreshToken = localStorage.getItem('refresh_token');
 
-        if (!access_token) {
-          throw new Error('No access token returned from refresh');
+      try {
+        // Use base axios to bypass the request interceptor and inject refresh token in the header
+        const response = await axios.post(
+          `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/auth/refresh`,
+          {},
+          {
+            headers: { Authorization: `Bearer ${refreshToken}` },
+            withCredentials: true,
+          }
+        );
+        
+        const { access_token, refresh_token: newRefreshToken } = response.data;
+
+        localStorage.setItem('access_token', access_token);
+        if (newRefreshToken) {
+          localStorage.setItem('refresh_token', newRefreshToken);
         }
 
-        setAccessToken(access_token);
-        
         if (originalRequest.headers) {
           originalRequest.headers.Authorization = `Bearer ${access_token}`;
         }
-        
+
         processQueue(null, access_token);
-        return axiosInstance(originalRequest);
+        return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
-        setAccessToken(null);
-        localStorage.removeItem('hasSession');
+        localStorage.clear();
         window.location.href = '/login';
         return Promise.reject(refreshError);
       } finally {
@@ -104,4 +97,4 @@ axiosInstance.interceptors.response.use(
   }
 );
 
-export default axiosInstance;
+export default api;
