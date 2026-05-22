@@ -2,14 +2,16 @@ import { useState } from 'react';
 import { Play, Clock, Award, BookOpen, Filter, Search, TrendingUp } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import * as Progress from '@radix-ui/react-progress';
+import { useNavigate } from 'react-router';
 
-interface MyCoursesPageProps {
-  onNavigateToCourse: (courseId: string) => void;
-}
-
-export function MyCoursesPage({ onNavigateToCourse }: MyCoursesPageProps) {
+export function MyCoursesPage() {
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
+
+  const handleNavigateToCourse = (courseId: string) => {
+    navigate('/module');
+  };
 
   const filters = [
     { id: 'all', label: 'Todos os Cursos', count: 6 },

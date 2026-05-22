@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router';
+import { Routes, Route, Navigate, Outlet } from 'react-router';
 import { AuthProvider } from '../context/AuthContext';
 import { ProtectedRoute } from '../components/ProtectedRoute';
 
@@ -17,29 +17,6 @@ import { VideoPlayer } from './components/VideoPlayer';
 import { SimuladoPage } from './components/SimuladoPage';
 import { MaterialsPage } from './components/MaterialsPage';
 import { CertificatesPage } from './components/CertificatesPage';
-import { Header } from './components/Header';
-import { Sidebar } from './components/Sidebar';
-import { useLocation } from 'react-router';
-
-function MainLayout({ children }: { children: React.ReactNode }) {
-  const location = useLocation();
-  const isPlayer = location.pathname.includes('/player');
-  const isSimulado = location.pathname.includes('/simulado');
-
-  if (isSimulado) return <>{children}</>;
-
-  return (
-    <div className="min-h-screen bg-[#f8fafc]">
-      <Header userName="Usuário" />
-      <div className="flex">
-        {!isPlayer && <Sidebar currentPage={location.pathname.split('/')[1]} onNavigate={() => {}} />}
-        <main className={`flex-1 ${!isPlayer ? 'ml-20 lg:ml-64' : ''}`}>
-          {children}
-        </main>
-      </div>
-    </div>
-  );
-}
 
 export default function App() {
   return (
@@ -77,26 +54,41 @@ export default function App() {
           } 
         />
 
-        {/* Protected Main Routes */}
+        {/* Protected Main Routes with Nested Dashboard */}
         <Route 
-          path="/*" 
+          path="/dashboard" 
           element={
             <ProtectedRoute requireOnboarding={true}>
-              <MainLayout>
-                <Routes>
-                  <Route path="/dashboard" element={<Dashboard userName="Usuário" onNavigateToCourse={() => {}} />} />
-                  <Route path="/my-courses" element={<MyCoursesPage onNavigateToCourse={() => {}} />} />
-                  <Route path="/module" element={<ModulePage onNavigateToPlayer={() => {}} />} />
-                  <Route path="/player" element={<VideoPlayer />} />
-                  <Route path="/simulado" element={<SimuladoPage onExit={() => {}} />} />
-                  <Route path="/materials" element={<MaterialsPage />} />
-                  <Route path="/certificates" element={<CertificatesPage />} />
-                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                </Routes>
-              </MainLayout>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<MyCoursesPage />} />
+          <Route path="certificados" element={<CertificatesPage />} />
+          <Route path="simulados" element={<SimuladoPage onExit={() => {}} />} />
+          <Route path="materiais" element={<MaterialsPage />} />
+          <Route path="cursos" element={<MyCoursesPage />} />
+        </Route>
+
+        {/* Other Protected Routes */}
+        <Route 
+          path="/player" 
+          element={
+            <ProtectedRoute requireOnboarding={true}>
+              <VideoPlayer />
             </ProtectedRoute>
           } 
         />
+        <Route 
+          path="/module" 
+          element={
+            <ProtectedRoute requireOnboarding={true}>
+              <ModulePage onNavigateToPlayer={() => {}} />
+            </ProtectedRoute>
+          } 
+        />
+
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </AuthProvider>
   );
