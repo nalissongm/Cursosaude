@@ -7,8 +7,9 @@ export type OnboardingStep = 'PENDING_EMAIL' | 'PENDING_PROFILE' | 'COMPLETED';
 interface User {
   id: string;
   email: string;
-  name: string;
+  fullName: string;
   role: string;
+  avatar?: string;
 }
 
 interface AuthContextType {
@@ -57,12 +58,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     handleNavigation(onboarding_step);
   };
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.clear();
     setUser(null);
     setOnboardingStep(null);
     navigate('/login');
-  };
+  }, [navigate]);
 
   const updateOnboardingStep = (step: OnboardingStep) => {
     setOnboardingStep(step);
@@ -70,16 +71,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    const storedStep = localStorage.getItem('onboarding_step') as OnboardingStep;
-    const token = localStorage.getItem('access_token');
+    const fetchUser = async () => {
+      const token = localStorage.getItem('access_token');
+      const storedStep = localStorage.getItem('onboarding_step') as OnboardingStep;
 
-    if (token && storedUser && storedStep) {
-      setUser(JSON.parse(storedUser));
-      setOnboardingStep(storedStep);
-    }
-    setIsLoading(false);
-  }, []);
+      if (token) {
+        try {
+          const { data } = await api.get('/auth/me');
+          setUser(data);
+          localStorage.setItem('user', JSON.stringify(data));
+          
+          if (storedStep) {
+            setOnboardingStep(storedStep);
+          }
+        } catch (error) {
+          console.error('Failed to fetch user', error);
+          logout();
+        }
+      }
+      setIsLoading(false);
+    };
+
+    fetchUser();
+  }, [logout]);
 
   return (
     <AuthContext.Provider value={{ user, isAuthenticated: !!user, onboardingStep, isLoading, login, logout, updateOnboardingStep }}>

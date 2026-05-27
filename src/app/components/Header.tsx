@@ -1,10 +1,20 @@
 import { Search, Bell } from 'lucide-react';
+import { useState } from 'react';
 
 interface HeaderProps {
-  userName: string;
+  user: {
+    fullName: string;
+    avatar?: string;
+  } | null;
 }
 
-export function Header({ userName }: HeaderProps) {
+export function Header({ user }: HeaderProps) {
+  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  const userName = user?.fullName || 'Usuário';
+  const [imgError, setImgError] = useState(false);
+
+  const showAvatar = user?.avatar && !imgError;
+
   return (
     <header className="bg-white border-b border-[#e2e8f0] sticky top-0 z-40">
       <div className="px-6 py-4 flex items-center justify-between">
@@ -39,12 +49,21 @@ export function Header({ userName }: HeaderProps) {
           {/* User Profile */}
           <div className="flex items-center gap-3 pl-4 border-l border-[#e2e8f0]">
             <div className="text-right hidden sm:block">
-              <p className="text-sm">{userName}</p>
+              <p className="text-sm font-medium">{userName}</p>
               <p className="text-xs text-[#64748b]">Aluno</p>
             </div>
-            <div className="w-10 h-10 bg-gradient-to-br from-[#1e40af] to-[#10b981] rounded-full flex items-center justify-center text-white">
-              {userName.charAt(0).toUpperCase()}
-            </div>
+            {showAvatar ? (
+              <img 
+                src={`${baseUrl}/uploads/avatars/${user.avatar}`}
+                alt={userName}
+                className="w-10 h-10 rounded-full object-cover shadow-sm border border-[#e2e8f0]"
+                onError={() => setImgError(true)}
+              />
+            ) : (
+              <div className="w-10 h-10 bg-gradient-to-br from-[#1e40af] to-[#10b981] rounded-full flex items-center justify-center text-white text-sm font-bold shadow-sm">
+                {userName.charAt(0).toUpperCase()}
+              </div>
+            )}
           </div>
         </div>
       </div>

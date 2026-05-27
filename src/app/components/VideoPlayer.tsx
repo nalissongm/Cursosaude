@@ -17,7 +17,7 @@ interface VideoPlayerProps {
 export function VideoPlayer({ lessonId }: VideoPlayerProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const userName = user?.name || 'Usuário';
+  const userName = user?.fullName || 'Usuário';
   
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [nextLessonId, setNextLessonId] = useState<string | null>(null);
@@ -41,7 +41,7 @@ export function VideoPlayer({ lessonId }: VideoPlayerProps) {
       <div className="flex h-screen w-screen bg-[#f8fafc] overflow-hidden">
         <Sidebar isOpen={isSidebarOpen} onToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
         <div className="flex-1 flex flex-col overflow-hidden">
-          <Header userName={userName} />
+          <Header user={user} />
           <main className={`flex-1 overflow-y-auto transition-all duration-300 ease-in-out ${isSidebarOpen ? 'ml-64' : 'ml-20'}`}>
             <div className="flex flex-col lg:flex-row h-full bg-[#0f172a]">
               <div className="flex-1 flex flex-col">
@@ -82,7 +82,7 @@ export function VideoPlayer({ lessonId }: VideoPlayerProps) {
       <div className="flex h-screen w-screen bg-[#f8fafc] overflow-hidden">
         <Sidebar isOpen={isSidebarOpen} onToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
         <div className="flex-1 flex flex-col overflow-hidden">
-          <Header userName={userName} />
+          <Header user={user} />
           <main className={`flex-1 overflow-y-auto transition-all duration-300 ease-in-out ${isSidebarOpen ? 'ml-64' : 'ml-20'}`}>
             <div className="flex flex-col items-center justify-center h-full bg-[#f8fafc] p-6 text-center">
               <AlertCircle className="w-16 h-16 text-red-500 mb-4" />
@@ -105,7 +105,7 @@ export function VideoPlayer({ lessonId }: VideoPlayerProps) {
     <div className="flex h-screen w-screen bg-[#f8fafc] overflow-hidden">
       <Sidebar isOpen={isSidebarOpen} onToggle={() => setIsSidebarOpen(!isSidebarOpen)} />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header userName={userName} />
+        <Header user={user} />
         <main className={`flex-1 overflow-y-auto transition-all duration-300 ease-in-out ${isSidebarOpen ? 'ml-64' : 'ml-20'}`}>
           <div className="flex flex-col lg:flex-row h-full bg-[#0f172a]">
             {/* Main Content - Video and Tabs */}

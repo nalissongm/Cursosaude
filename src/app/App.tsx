@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate, useParams, useNavigate } from 'react-router';
 import { AuthProvider } from '../context/AuthContext';
 import { ProtectedRoute } from '../components/ProtectedRoute';
+import { RoleGuard } from '../components/RoleGuard';
 
 // Pages
 import { LoginPage } from './components/LoginPage';
@@ -17,6 +18,14 @@ import { VideoPlayer } from './components/VideoPlayer';
 import { SimuladoPage } from './components/SimuladoPage';
 import { MaterialsPage } from './components/MaterialsPage';
 import { CertificatesPage } from './components/CertificatesPage';
+
+// Admin/Instructor Pages
+import { UsersPage } from './components/UsersPage';
+import { AdminCoursesPage } from './components/AdminCoursesPage';
+import { EnrollmentPage } from './components/EnrollmentPage';
+import { FilesPage } from './components/FilesPage';
+import { DoubtsPage } from './components/DoubtsPage';
+import { LessonEditorPage } from './components/LessonEditorPage';
 
 function VideoPlayerPage() {
   const { lessonId } = useParams();
@@ -73,6 +82,58 @@ export default function App() {
           <Route path="simulados" element={<SimuladoPage onExit={() => {}} />} />
           <Route path="materiais" element={<MaterialsPage />} />
           <Route path="cursos" element={<MyCoursesPage />} />
+
+          {/* Management Routes - Shared */}
+          <Route 
+            path="arquivos" 
+            element={
+              <RoleGuard allowedRoles={['ADMIN', 'INSTRUCTOR']}>
+                <FilesPage />
+              </RoleGuard>
+            } 
+          />
+          <Route 
+            path="duvidas" 
+            element={
+              <RoleGuard allowedRoles={['ADMIN', 'INSTRUCTOR']}>
+                <DoubtsPage />
+              </RoleGuard>
+            } 
+          />
+
+          {/* Management Routes - Admin Only */}
+          <Route 
+            path="usuarios" 
+            element={
+              <RoleGuard allowedRoles={['ADMIN']}>
+                <UsersPage />
+              </RoleGuard>
+            } 
+          />
+          <Route 
+            path="gestao-cursos" 
+            element={
+              <RoleGuard allowedRoles={['ADMIN', 'INSTRUCTOR']}>
+                <AdminCoursesPage />
+              </RoleGuard>
+            } 
+          />
+          <Route 
+            path="matriculas" 
+            element={
+              <RoleGuard allowedRoles={['ADMIN']}>
+                <EnrollmentPage />
+              </RoleGuard>
+            } 
+          />
+          <Route 
+            path="editor-aula/:lessonId" 
+            element={
+              <RoleGuard allowedRoles={['ADMIN', 'INSTRUCTOR']}>
+                <LessonEditorPage />
+              </RoleGuard>
+            } 
+          />
         </Route>
 
         {/* Other Protected Routes */}

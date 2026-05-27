@@ -62,9 +62,57 @@ export function useCourses() {
     async function fetchCourses() {
       try {
         setLoading(true);
-        const response = await api.get<Course[]>('/courses');
-        console.log('Courses API Response:', response.data);
-        setData(response.data);
+        // 1. Fetch enrolled courses
+        const enrollmentsResponse = await api.get('/enrollments/me');
+        const enrollments = enrollmentsResponse.data;
+
+        // 2. Fetch progress for each course
+        const coursesWithProgress = await Promise.all(
+          enrollments.map(async (enrollment: any) => {
+            const course = enrollment.course;
+            try {
+              const progressResponse = await api.get(`/progress/course/${course.id}`);
+              const progressData = progressResponse.data;
+
+              // Calculate status based on progress
+              let status: 'not-started' | 'in-progress' | 'completed' = 'not-started';
+              if (progressData.percentage === 100) {
+                status = 'completed';
+              } else if (progressData.percentage > 0) {
+                status = 'in-progress';
+              }
+
+              return {
+                ...course,
+                progress: progressData.percentage || 0,
+                status,
+                completedLessons: progressData.completedLessons || 0,
+                totalLessons: progressData.totalLessons || course.totalLessons || 0,
+                lastAccessed: progressData.lastAccessedAt 
+                  ? new Date(progressData.lastAccessedAt).toLocaleDateString('pt-BR') 
+                  : 'Nunca acessado',
+                nextLesson: progressData.nextLesson?.title || 'Próxima aula',
+                completionDate: progressData.completedAt 
+                  ? new Date(progressData.completedAt).toLocaleDateString('pt-BR') 
+                  : undefined,
+                duration: course.duration || '0h',
+              } as Course;
+            } catch (err) {
+              console.error(`Error fetching progress for course ${course.id}:`, err);
+              return {
+                ...course,
+                progress: 0,
+                status: 'not-started',
+                completedLessons: 0,
+                totalLessons: course.totalLessons || 0,
+                lastAccessed: 'Erro ao carregar',
+                duration: course.duration || '0h',
+              } as Course;
+            }
+          })
+        );
+
+        setData(coursesWithProgress);
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err : new Error('Failed to fetch courses'));

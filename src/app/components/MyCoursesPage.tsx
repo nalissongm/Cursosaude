@@ -3,7 +3,7 @@ import { Play, Clock, Award, BookOpen, Filter, Search, TrendingUp } from 'lucide
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import * as Progress from '@radix-ui/react-progress';
 import { useNavigate } from 'react-router';
-import { useCourses } from '@/hooks/useCourses';
+import { useCourses, getCourseImage } from '@/hooks/useCourses';
 import { Skeleton } from './ui/skeleton';
 import { Card } from './ui/card';
 
@@ -47,8 +47,6 @@ export function MyCoursesPage() {
   const navigate = useNavigate();
   const { data: courses, loading, error } = useCourses();
   
-  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
   const handleNavigateToCourse = (courseId: string) => {
     navigate(`/courses/${courseId}`);
   };
@@ -206,13 +204,11 @@ export function MyCoursesPage() {
               <div className="flex flex-col md:flex-row">
                 {/* Course Image */}
                 <div className="relative w-full md:w-80 h-48 md:h-auto overflow-hidden">
-                  {course.imageCourseUrl && (
-                    <ImageWithFallback
-                      src={`${baseUrl}/uploads/courses/covers/${course.imageCourseUrl}`}
-                      alt={course.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  )}
+                  <ImageWithFallback
+                    src={getCourseImage(course)}
+                    alt={course.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
                   <div className="absolute top-4 left-4">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                       course.category === 'Residência'

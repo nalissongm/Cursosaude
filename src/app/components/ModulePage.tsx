@@ -26,7 +26,7 @@ export function ModulePage({ onNavigateToPlayer }: ModulePageProps) {
   const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const userName = user?.name || 'Usuário';
+  const userName = user?.fullName || 'Usuário';
   
   const [modules, setModules] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -92,7 +92,7 @@ export function ModulePage({ onNavigateToPlayer }: ModulePageProps) {
       <div className="flex h-screen bg-[#f8fafc] overflow-hidden">
         <Sidebar />
         <div className="flex-1 flex flex-col overflow-hidden">
-          <Header userName={userName} />
+          <Header user={user} />
           <main className="flex-1 overflow-y-auto ml-20 lg:ml-64">
             <div className="p-6">
               <div className="mb-8">
@@ -116,7 +116,7 @@ export function ModulePage({ onNavigateToPlayer }: ModulePageProps) {
     <div className="flex h-screen bg-[#f8fafc] overflow-hidden">
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header userName={userName} />
+        <Header user={user} />
         <main className="flex-1 overflow-y-auto ml-20 lg:ml-64">
           <div className="p-6">
             {/* Header Area */}
