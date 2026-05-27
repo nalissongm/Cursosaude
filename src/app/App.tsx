@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate, Outlet } from 'react-router';
+import { Routes, Route, Navigate, useParams, useNavigate } from 'react-router';
 import { AuthProvider } from '../context/AuthContext';
 import { ProtectedRoute } from '../components/ProtectedRoute';
 
@@ -17,6 +17,11 @@ import { VideoPlayer } from './components/VideoPlayer';
 import { SimuladoPage } from './components/SimuladoPage';
 import { MaterialsPage } from './components/MaterialsPage';
 import { CertificatesPage } from './components/CertificatesPage';
+
+function VideoPlayerPage() {
+  const { lessonId } = useParams();
+  return <VideoPlayer lessonId={lessonId || ''} />;
+}
 
 export default function App() {
   return (
@@ -72,24 +77,37 @@ export default function App() {
 
         {/* Other Protected Routes */}
         <Route 
-          path="/player" 
+          path="/player/:lessonId" 
           element={
             <ProtectedRoute requireOnboarding={true}>
-              <VideoPlayer />
+              <VideoPlayerPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/player" 
+          element={<Navigate to="/dashboard" replace />}
+        />
+        <Route 
+          path="/courses/:courseId" 
+          element={
+            <ProtectedRoute requireOnboarding={true}>
+              <ModuleWrapper />
             </ProtectedRoute>
           } 
         />
         <Route 
           path="/module" 
-          element={
-            <ProtectedRoute requireOnboarding={true}>
-              <ModulePage onNavigateToPlayer={() => {}} />
-            </ProtectedRoute>
-          } 
+          element={<Navigate to="/dashboard" replace />}
         />
 
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </AuthProvider>
   );
+}
+
+function ModuleWrapper() {
+  const navigate = useNavigate();
+  return <ModulePage onNavigateToPlayer={(id) => navigate(`/player/${id}`)} />;
 }

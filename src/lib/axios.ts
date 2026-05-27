@@ -6,7 +6,7 @@ interface FailedRequest {
 }
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
+  baseURL: (import.meta as any).env.VITE_API_URL || 'http://localhost:3000',
   withCredentials: true,
 });
 
@@ -62,7 +62,7 @@ api.interceptors.response.use(
       try {
         // Use base axios to bypass the request interceptor and inject refresh token in the header
         const response = await axios.post(
-          `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/auth/refresh`,
+          `${(import.meta as any).env.VITE_API_URL || 'http://localhost:3000'}/auth/refresh`,
           {},
           {
             headers: { Authorization: `Bearer ${refreshToken}` },
